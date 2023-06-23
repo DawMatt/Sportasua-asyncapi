@@ -1,0 +1,193 @@
+asyncapi: "2.6.0"
+info:
+  title: Shoe Store Order System API
+  version: '1.0.0'
+  description: |
+    Describes event hooks for the internal shoe ordering system.
+    ## Events:
+    * Order received
+    * Supplier selected
+    
+    ## Commands
+    * Make Bid
+
+servers:
+    dev:
+    url: test.mykafkacluster.org:8092
+    protocol: kafka-secure
+    description: Test broker
+  production:
+    url: mykafkacluster.org:8092
+    protocol: kafka-secure
+    description: Production broker
+
+channels:
+  shoe/orders:
+    description: A description of the channel
+    publish:
+asyncapi: '2.6.0'
+info: 
+  title: Shoe Sales System  Order Fulfilment API
+  version: 1.0.0
+  description: |
+    Describes purchase order and supply chain events for  the Sales System.
+  ## Events: Purchase order created, supplier selected, Purchase order fulfilled
+  ## Commands: Bid on purchase orders
+
+servers:
+  dev:
+    url: test.mykafkacluster.org:8092
+    protocol: kafka-secure
+    description: Test broker
+  production:
+    url: mykafkacluster.org:8092
+    protocol: kafka-secure
+    description: Production broker
+
+channels:
+  shoesales/orders:
+    subscribe:
+      message:
+        $ref: '#/components/messages/orderReceived'
+  shoesales/bids:
+    publish:
+      message: 
+        $ref: '#/components/messages/bidOnOrder'
+
+components:
+  messages:
+    orderReceived: 
+      name: orderReceived
+      summary: tk
+      contentType: application/json
+      payload: 
+        $ref: "#/components/schemas/orderReceivedPayload"
+
+    bidOnOrder: 
+      name: bidOnOrder
+      summary: tk
+      contentType: application/json
+      payload: 
+        $ref: "#/components/schemas/sourcingBidPayload"
+
+
+  schemas:
+    money:
+      type: object
+      properties:
+        currencyCode: 
+          type: string
+        ammount:
+          type: number
+
+    shippingAddress:
+      type: object
+      properties:
+        streetAddress: 
+          type: string
+          examples:
+            - 14 Thunder Ct.
+            - 7887 Walton road, Building 18
+        postCode:
+          type: string
+        addressCountry:
+          type: string
+        addressRegion:
+          type: string
+          examples:
+            - Ontario
+            - MI
+            - London                    
+        addressLocality:
+          type: string
+          examples:
+            - Toronto
+            - Detroit
+            - London
+
+    shippingDetail:
+      type: object
+      properties:
+        priorityLevel:
+          type: string
+          enum:
+            - "Same Day"
+            - "Priority"
+            - "Standard"
+            - "Discount"
+        shippingAddress: 
+          $ref: "#/components/schemas/shippingAddress"
+
+    salesOrder:
+      type: object
+      properties:
+        salesChannel:
+          type: string
+          enum:
+            - "web"
+            - "mobile"
+            - "3rd Party"            
+        customerDetails:
+          type: object
+          properties:
+            authenticated: 
+              type: boolean
+            customerId: 
+              type: string
+        orderDate: 
+          type: string
+          format: date-time
+        payment:
+          type: object
+          properties:
+            paymentMethod: 
+              type: string
+            paymentStatus:
+              type: string
+            paymentAmount:
+              $ref: "#/components/schemas/money"
+        shipping:
+          $ref: "#/components/schemas/shippingDetail"
+        items: 
+          type: array
+          items:
+            type: object
+            properties:
+              productId: 
+                type: string
+            
+    orderReceivedPayload:
+      description: A sales order event that can be used to trigger sourcing and procurement processes
+      type: object
+      properties:
+        salesOrder: 
+          $ref: "#/components/schemas/salesOrder"
+          description: A sales order that contains the customer's identifier, the items they have ordered, payment status and shipping details.
+        sourcingPreferences:
+          type: object
+          properties:
+            preferredSupplierIds:
+              description: A list of supplier IDs that have been identified as preferred suppliers for this order
+              type: array
+              items: 
+                type: string
+            deadline:
+              description: The deadline that suppliers need to meet before a sourcing decision is made.
+              type: string
+              format: date-time
+
+    sourcingBidPayload:
+      description: A bid request made by a supplier as part of the sourcing process
+      type: object
+      properties:
+        orderId: 
+          type: string
+        supplierId:
+          type: string
+        bidExpiry:
+          type: string
+          format: date-time
+        bidPice:
+            $ref: "#/components/schemas/money"
+        conditions:
+            type: string
