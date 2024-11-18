@@ -1,38 +1,11 @@
-asyncapi: "2.6.0"
-info:
-  title: Shoe Store Order System API
-  version: '1.0.0'
-  description: |
-    Describes event hooks for the internal shoe ordering system.
-    ## Events:
-    * Order received
-    * Supplier selected
-    
-    ## Commands
-    * Make Bid
-
-servers:
-    dev:
-    url: test.mykafkacluster.org:8092
-    protocol: kafka-secure
-    description: Test broker
-  production:
-    url: mykafkacluster.org:8092
-    protocol: kafka-secure
-    description: Production broker
-
-channels:
-  shoe/orders:
-    description: A description of the channel
-    publish:
 asyncapi: '2.6.0'
 info: 
   title: Shoe Sales System  Order Fulfilment API
   version: 1.0.0
   description: |
     Describes purchase order and supply chain events for  the Sales System.
-  ## Events: Purchase order created, supplier selected, Purchase order fulfilled
-  ## Commands: Bid on purchase orders
+    ## Events: Purchase order created, supplier selected, Purchase order fulfilled
+    ## Commands: Bid on purchase orders
 
 servers:
   dev:
@@ -47,10 +20,12 @@ servers:
 channels:
   shoesales/orders:
     subscribe:
+      operationId: orders.subscribe
       message:
         $ref: '#/components/messages/orderReceived'
   shoesales/bids:
     publish:
+      operationId: orders.publish
       message: 
         $ref: '#/components/messages/bidOnOrder'
 
@@ -126,11 +101,11 @@ components:
           enum:
             - "web"
             - "mobile"
-            - "3rd Party"            
+            - "3rd Party"
         customerDetails:
           type: object
           properties:
-            authenticated: 
+            authenticated:
               type: boolean
             customerId: 
               type: string
@@ -140,7 +115,7 @@ components:
         payment:
           type: object
           properties:
-            paymentMethod: 
+            paymentMethod:
               type: string
             paymentStatus:
               type: string
